@@ -45,6 +45,18 @@ func (ls *LetStatement) TokeLiteral() string {
 
 // ================================================
 
+type ReturnStatement struct {
+	Token       token.Token
+	ReturnValue Expression
+}
+
+func (rs *ReturnStatement) statementNode() {}
+func (rs *ReturnStatement) TokeLiteral() string {
+	return rs.Token.Literal
+}
+
+// ================================================
+
 type Identifier struct {
 	Token token.Token
 	Value string
@@ -53,4 +65,16 @@ type Identifier struct {
 func (id *Identifier) expressNode() {}
 func (id *Identifier) TokeLiteral() string {
 	return id.Token.Literal
+}
+
+// ================================================
+
+type ExpressionStatement struct {
+	Token      token.Token
+	Expression Expression
+}
+
+func (es *ExpressionStatement) statementNode() {}
+func (es *ExpressionStatement) TokeLiteral() string {
+	return es.Token.Literal
 }
