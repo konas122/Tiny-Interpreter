@@ -23,7 +23,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		if p.curToken.Type == token.EOF {
 			msg := fmt.Sprintf("expected the last token to be ';', got %s instead", p.peekToken.Type)
 			p.errors = append(p.errors, msg)
-			break
+			return nil
 		}
 		p.nextToken()
 	}
