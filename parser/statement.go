@@ -3,7 +3,6 @@ package parser
 import (
 	"Interpreter/ast"
 	"Interpreter/token"
-	"fmt"
 )
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
@@ -19,12 +18,10 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	for !p.curTokenIs(token.SEMICOLON) {
-		if p.curToken.Type == token.EOF {
-			msg := fmt.Sprintf("expected the last token to be ';', got %s instead", p.peekToken.Type)
-			p.errors = append(p.errors, msg)
-			return nil
-		}
+	p.nextToken()
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
@@ -37,13 +34,9 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	stmt := &ast.ReturnStatement{Token: p.curToken}
 
 	p.nextToken()
+	stmt.ReturnValue = p.parseExpression(LOWEST)
 
-	for !p.curTokenIs(token.SEMICOLON) {
-		if p.curToken.Type == token.EOF {
-			msg := fmt.Sprintf("expected the last token to be ';', got %s instead", p.peekToken.Type)
-			p.errors = append(p.errors, msg)
-			return nil
-		}
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 	return stmt
