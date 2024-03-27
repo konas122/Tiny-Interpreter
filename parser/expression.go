@@ -116,3 +116,9 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 
 	return exp
 }
+
+// ================================================
+
+func (p *Parser) parseStringLiteral() ast.Expression {
+	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+}
