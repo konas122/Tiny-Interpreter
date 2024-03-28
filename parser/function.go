@@ -48,31 +48,8 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 
 // ================================================
 
-func (p *Parser) parseCallArguments() []ast.Expression {
-	args := []ast.Expression{}
-
-	if p.peekTokenIs(token.RPAREN) {
-		p.nextToken()
-		return args
-	}
-
-	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
-
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
-	}
-
-	if !p.expectedPeek(token.RPAREN) {
-		return nil
-	}
-	return args
-}
-
 func (p *Parser) parseCallStatement(function ast.Expression) ast.Expression {
 	exp := &ast.CallStatement{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseExpressionList(token.RPAREN)
 	return exp
 }
