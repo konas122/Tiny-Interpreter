@@ -1,6 +1,9 @@
 package evaluator
 
-import "Interpreter/object"
+import (
+	"Interpreter/object"
+	"fmt"
+)
 
 var libfuncs = map[string]*object.LibFunc{
 	"len": &object.LibFunc{
@@ -92,6 +95,14 @@ var libfuncs = map[string]*object.LibFunc{
 			newElements[length] = args[1]
 
 			return &object.Array{Elements: newElements}
+		},
+	},
+	"print": &object.LibFunc{
+		Fn: func(args ...object.Object) object.Object {
+			for _, arg := range args {
+				fmt.Println(arg.Inspect())
+			}
+			return nil
 		},
 	},
 }

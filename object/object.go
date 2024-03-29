@@ -19,6 +19,7 @@ const (
 	STRING_OBJ       = "STRING"
 	LIBFUNC_OBJ      = "LIBFUNC"
 	ARRAY_OBJ        = "ARRAY"
+	HASH_OBJ         = "HASH"
 )
 
 type Object interface {

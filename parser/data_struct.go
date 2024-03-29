@@ -47,3 +47,29 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	}
 	return exp
 }
+
+// ================================================
+
+func (p *Parser) parseHashLiteral() ast.Expression {
+	hash := &ast.HashLiteral{Token: p.curToken}
+	hash.Pairs = make(map[ast.Expression]ast.Expression, 0)
+
+	for !p.peekTokenIs(token.RBRACE) {
+		p.nextToken()
+		key := p.parseExpression(LOWEST)
+		if !p.expectedPeek(token.COLON) {
+			return nil
+		}
+		p.nextToken()
+		value := p.parseExpression(LOWEST)
+		hash.Pairs[key] = value
+		if !p.peekTokenIs(token.RBRACE) && !p.expectedPeek(token.COMMA) {
+			return nil
+		}
+	}
+
+	if !p.expectedPeek(token.RBRACE) {
+		return nil
+	}
+	return hash
+}
