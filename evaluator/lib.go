@@ -6,7 +6,7 @@ import (
 )
 
 var libfuncs = map[string]*object.LibFunc{
-	"len": &object.LibFunc{
+	"len": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
@@ -21,7 +21,7 @@ var libfuncs = map[string]*object.LibFunc{
 			}
 		},
 	},
-	"first": &object.LibFunc{
+	"first": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
@@ -37,7 +37,7 @@ var libfuncs = map[string]*object.LibFunc{
 			}
 		},
 	},
-	"last": &object.LibFunc{
+	"last": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
@@ -56,7 +56,7 @@ var libfuncs = map[string]*object.LibFunc{
 			}
 		},
 	},
-	"rest": &object.LibFunc{
+	"rest": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
@@ -77,7 +77,7 @@ var libfuncs = map[string]*object.LibFunc{
 			}
 		},
 	},
-	"push": &object.LibFunc{
+	"append": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("wrong number of arguments. got=%d, want=2", len(args))
@@ -97,7 +97,7 @@ var libfuncs = map[string]*object.LibFunc{
 			return &object.Array{Elements: newElements}
 		},
 	},
-	"print": &object.LibFunc{
+	"print": {
 		Fn: func(args ...object.Object) object.Object {
 			for _, arg := range args {
 				fmt.Println(arg.Inspect())
