@@ -8,6 +8,8 @@ type Token struct {
 }
 
 const (
+	COMMENT = "//"
+
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
 
