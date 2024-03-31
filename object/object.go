@@ -20,7 +20,9 @@ const (
 	LIBFUNC_OBJ      = "LIBFUNC"
 	ARRAY_OBJ        = "ARRAY"
 	HASH_OBJ         = "HASH"
-	QUOTE_OBJ        = "QUOTE"
+
+	QUOTE_OBJ = "QUOTE"
+	MACRO_OBJ = "MACRO"
 )
 
 type Object interface {
