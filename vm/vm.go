@@ -40,6 +40,10 @@ func (vm *VM) Run() error {
 		case code.OpConstant:
 			constIndex := code.ReadUint16(vm.instructions[ip+1:])
 			ip += 2
+			err := vm.push(vm.constants[constIndex])
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
