@@ -59,8 +59,23 @@ func (vm *VM) Run() error {
 			if err := vm.push(False); err != nil {
 				return err
 			}
+		case code.OpEqual, code.OpNotEqual, code.OpGreater:
+			err := vm.executeComparison(op)
+			if err != nil {
+				return err
+			}
 		case code.OpPop:
 			vm.pop()
+		case code.OpBang:
+			err := vm.executeBangOperator()
+			if err != nil {
+				return err
+			}
+		case code.OpMinus:
+			err := vm.executeMinusOperator()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -119,4 +134,69 @@ func (vm *VM) executeBinaryIntegerOperation(op code.Opcode, left, right object.O
 	}
 
 	return vm.push(&object.Integer{Value: result})
+}
+
+func (vm *VM) executeComparison(op code.Opcode) error {
+	right := vm.pop()
+	left := vm.pop()
+
+	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
+		return vm.executeIntegerComparison(op, left, right)
+	}
+
+	switch op {
+	case code.OpEqual:
+		return vm.push(nativeBoolToBooleanObject(left == right))
+	case code.OpNotEqual:
+		return vm.push(nativeBoolToBooleanObject(left != right))
+	default:
+		return fmt.Errorf("unknown operator: %d (%s %s)", op, left.Type(), right.Type())
+	}
+}
+
+func (vm *VM) executeIntegerComparison(op code.Opcode, left, right object.Object) error {
+	leftValue := left.(*object.Integer).Value
+	rightValue := right.(*object.Integer).Value
+
+	switch op {
+	case code.OpEqual:
+		return vm.push(nativeBoolToBooleanObject(leftValue == rightValue))
+	case code.OpNotEqual:
+		return vm.push(nativeBoolToBooleanObject(leftValue != rightValue))
+	case code.OpGreater:
+		return vm.push(nativeBoolToBooleanObject(leftValue > rightValue))
+	default:
+		return fmt.Errorf("unknown operator: %d", op)
+	}
+}
+
+func nativeBoolToBooleanObject(input bool) *object.Boolean {
+	if input {
+		return True
+	}
+	return False
+}
+
+func (vm *VM) executeBangOperator() error {
+	operand := vm.pop()
+
+	switch operand {
+	case True:
+		return vm.push(False)
+	case False:
+		return vm.push(True)
+	default:
+		return vm.push(False)
+	}
+}
+
+func (vm *VM) executeMinusOperator() error {
+	operand := vm.pop()
+
+	if operand.Type() != object.INTEGER_OBJ {
+		return fmt.Errorf("unsupported type for negation %s", operand.Type())
+	}
+
+	value := operand.(*object.Integer).Value
+	return vm.push(&object.Integer{Value: -value})
 }

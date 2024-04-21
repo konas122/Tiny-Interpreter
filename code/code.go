@@ -19,6 +19,13 @@ const (
 
 	OpTrue
 	OpFalse
+
+	OpEqual
+	OpNotEqual
+	OpGreater
+
+	OpMinus
+	OpBang
 )
 
 func (ins Instructions) String() string {
@@ -70,6 +77,11 @@ var definitions = map[Opcode]*Definition{
 	OpDiv:      {"OpDiv", []int{}},
 	OpTrue:     {"OpTrue", []int{}},
 	OpFalse:    {"OpFalse", []int{}},
+	OpEqual:    {"OpEqual", []int{}},
+	OpNotEqual: {"OpNotEqual", []int{}},
+	OpGreater:  {"OpGreater", []int{}},
+	OpMinus:    {"OpMinus", []int{}},
+	OpBang:     {"OpBang", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {
