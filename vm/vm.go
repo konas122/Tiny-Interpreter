@@ -9,6 +9,7 @@ import (
 
 const StackSize = 2048
 
+var Null = &object.Null{}
 var True = &object.Boolean{Value: true}
 var False = &object.Boolean{Value: false}
 
@@ -29,6 +30,19 @@ func New(bytecode *compiler.Bytecode) *VM {
 	}
 }
 
+func isTruthy(obj object.Object) bool {
+	switch obj := obj.(type) {
+
+	case *object.Boolean:
+		return obj.Value
+	case *object.Null:
+		return false
+
+	default:
+		return true
+	}
+}
+
 func (vm *VM) StackTop() object.Object {
 	if vm.sp == 0 {
 		return nil
@@ -40,6 +54,7 @@ func (vm *VM) Run() error {
 	for ip := 0; ip < len(vm.instructions); ip++ {
 		op := code.Opcode(vm.instructions[ip])
 		switch op {
+
 		case code.OpConstant:
 			constIndex := code.ReadUint16(vm.instructions[ip+1:])
 			ip += 2
@@ -47,35 +62,57 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+
 		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
 			if err := vm.executeBinaryOperation(op); err != nil {
 				return err
 			}
+
 		case code.OpTrue:
 			if err := vm.push(True); err != nil {
 				return err
 			}
+
 		case code.OpFalse:
 			if err := vm.push(False); err != nil {
 				return err
 			}
+
 		case code.OpEqual, code.OpNotEqual, code.OpGreater:
-			err := vm.executeComparison(op)
-			if err != nil {
+			if err := vm.executeComparison(op); err != nil {
 				return err
 			}
+
 		case code.OpPop:
 			vm.pop()
+
 		case code.OpBang:
-			err := vm.executeBangOperator()
-			if err != nil {
+			if err := vm.executeBangOperator(); err != nil {
 				return err
 			}
+
 		case code.OpMinus:
-			err := vm.executeMinusOperator()
-			if err != nil {
+			if err := vm.executeMinusOperator(); err != nil {
 				return err
 			}
+
+		case code.OpJump:
+			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip = pos - 1
+
+		case code.OpJumpNotTruthy:
+			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip += 2
+			condition := vm.pop()
+			if !isTruthy(condition) {
+				ip = pos - 1
+			}
+
+		case code.OpNull:
+			if err := vm.push(Null); err != nil {
+				return err
+			}
+
 		}
 	}
 	return nil
@@ -184,6 +221,8 @@ func (vm *VM) executeBangOperator() error {
 	case True:
 		return vm.push(False)
 	case False:
+		return vm.push(True)
+	case Null:
 		return vm.push(True)
 	default:
 		return vm.push(False)
