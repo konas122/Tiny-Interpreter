@@ -3,6 +3,7 @@ package repl
 import (
 	"Interpreter/compiler"
 	"Interpreter/lexer"
+	"Interpreter/object"
 	"Interpreter/parser"
 	"Interpreter/vm"
 	"bufio"
@@ -33,6 +34,10 @@ func Start(in io.Reader, out io.Writer) {
 	// env := object.NewEnvironment()
 	// macroEnv := object.NewEnvironment()
 
+	constants := []object.Object{}
+	globals := make([]object.Object, vm.GlobalSize)
+	symbolTable := compiler.NewSymbolTable()
+
 	for {
 		fmt.Fprint(out, PROMPT)
 		scanned := scanner.Scan()
@@ -59,15 +64,19 @@ func Start(in io.Reader, out io.Writer) {
 		// 	io.WriteString(out, "\n")
 		// }
 
-		comp := compiler.New()
-		if err := comp.Compile(program); err != nil {
-			fmt.Fprintf(out, "Woops! Compilation failed:\n\t%s\n", err)
+		comp := compiler.NewWithState(symbolTable, constants)
+		err := comp.Compile(program)
+		if err != nil {
+			fmt.Fprintf(out, "Woops! Compilation failed:\n %s\n", err)
 			continue
 		}
 
-		machine := vm.New(comp.Bytecode())
-		if err := machine.Run(); err != nil {
-			fmt.Fprintf(out, "Woops! Executing bytecode failed:\n\t%s\n", err)
+		code := comp.Bytecode()
+		constants = code.Constants
+		machine := vm.NewWithGlobalsStore(code, globals)
+		err = machine.Run()
+		if err != nil {
+			fmt.Fprintf(out, "Woops! Executing bytecode failed:\n %s\n", err)
 			continue
 		}
 
