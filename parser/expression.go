@@ -16,7 +16,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	CALL        // myFunction(X)
-	INDEX
+	INDEX       // Arrary[index]
 )
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
