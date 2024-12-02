@@ -86,14 +86,22 @@ func (c *Compiler) Compile(node ast.Node) error {
 			return err
 		}
 		symbol := c.symbolTable.Define(node.Name.Value)
-		c.emit(code.OpSetGlobal, symbol.Index)
+		if symbol.Scope == GlobalScope {
+			c.emit(code.OpSetGlobal, symbol.Index)
+		} else {
+			c.emit(code.OpSetLocal, symbol.Index)
+		}
 
 	case *ast.Identifier:
 		symbol, ok := c.symbolTable.Resolve(node.Value)
 		if !ok {
 			return fmt.Errorf("undefined variable %s", node.Value)
 		}
-		c.emit(code.OpGetGlobal, symbol.Index)
+		if symbol.Scope == GlobalScope {
+			c.emit(code.OpGetGlobal, symbol.Index)
+		} else {
+			c.emit(code.OpGetLocal, symbol.Index)
+		}
 
 	case *ast.IfStatement:
 		if err := c.Compile(node.Condition); err != nil {
@@ -241,8 +249,12 @@ func (c *Compiler) Compile(node ast.Node) error {
 
 	case *ast.FunctionLiteral:
 		c.enterScope()
-		err := c.Compile(node.Body)
-		if err != nil {
+
+		for _, p := range node.Parameters {
+			c.symbolTable.Define(p.Value)
+		}
+
+		if err := c.Compile(node.Body); err != nil {
 			return err
 		}
 
@@ -254,9 +266,27 @@ func (c *Compiler) Compile(node ast.Node) error {
 			c.emit(code.OpReturn)
 		}
 
+		numLocals := c.symbolTable.numDefinitions
 		ins := c.leaveScope()
-		compiledFn := &object.CompiledFunction{Instructions: ins}
+
+		compiledFn := &object.CompiledFunction{
+			Instructions: ins,
+			NumLocals:    numLocals,
+		}
+
 		c.emit(code.OpConstant, c.addConstant(compiledFn))
+
+	case *ast.CallStatement:
+		if err := c.Compile(node.Function); err != nil {
+			return err
+		}
+
+		for _, a := range node.Arguments {
+			if err := c.Compile(a); err != nil {
+				return err
+			}
+		}
+		c.emit(code.OpCall, len(node.Arguments))
 	}
 	return nil
 }
@@ -344,6 +374,7 @@ func (c *Compiler) enterScope() {
 		lastInstruction:     EmittedInstruction{},
 		previousInstruction: EmittedInstruction{},
 	}
+	c.symbolTable = NewEnclosedSymbolTable(c.symbolTable)
 	c.scopes = append(c.scopes, scope)
 	c.scopeIndex++
 }
@@ -351,6 +382,7 @@ func (c *Compiler) enterScope() {
 func (c *Compiler) leaveScope() code.Instructions {
 	instructions := c.currentInstructions()
 
+	c.symbolTable = c.symbolTable.Outer
 	c.scopes = c.scopes[:len(c.scopes)-1]
 	c.scopeIndex--
 
