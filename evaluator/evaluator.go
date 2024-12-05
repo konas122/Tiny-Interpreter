@@ -320,7 +320,7 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 	if val, ok := env.Get(node.Value); ok {
 		return val
 	}
-	if libfunc, ok := libfuncs[node.Value]; ok {
+	if libfunc, ok := LibFuncs[node.Value]; ok {
 		return libfunc
 	}
 	return newError("identifier not found: " + node.Value)
@@ -335,7 +335,10 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 		evaluated := Eval(fn.Body, extendedEnv)
 		return unwrapReturnValue(evaluated)
 	case *object.LibFunc:
-		return fn.Fn(args...)
+		if res := fn.Fn(args...); res != nil {
+			return res
+		}
+		return NULL
 	default:
 		return newError("not a function: %s", fn.Type())
 	}

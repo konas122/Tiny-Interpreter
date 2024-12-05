@@ -173,6 +173,16 @@ func (vm *VM) Run() error {
 				return err
 			}
 
+		case code.OpGetLibFunc:
+			libFuncIndex := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip += 1
+
+			definition := object.LibFuncs[libFuncIndex]
+			err := vm.push(definition.LibFunc)
+			if err != nil {
+				return err
+			}
+
 		case code.OpArray:
 			numElements := int(code.ReadUint16(ins[ip+1:]))
 			vm.currentFrame().ip += 2
@@ -206,14 +216,11 @@ func (vm *VM) Run() error {
 			}
 
 		case code.OpCall:
+			numArgs := code.ReadUint8((ins[ip+1:]))
 			vm.currentFrame().ip += 1
-			fn, ok := vm.stack[vm.sp-1].(*object.CompiledFunction)
-			if !ok {
-				return fmt.Errorf("calling non-function")
+			if err := vm.executeCall(int(numArgs)); err != nil {
+				return err
 			}
-			frame := NewFrame(fn, vm.sp)
-			vm.pushFrame(frame)
-			vm.sp = frame.bp + fn.NumLocals
 
 		case code.OpReturnValue:
 			returnedValue := vm.pop()
@@ -443,4 +450,42 @@ func (vm *VM) pushFrame(f *Frame) {
 func (vm *VM) popFrame() *Frame {
 	vm.frameIndex--
 	return vm.frames[vm.frameIndex]
+}
+
+func (vm *VM) executeCall(numArgs int) error {
+	callee := vm.stack[vm.sp-1-numArgs]
+	switch callee := callee.(type) {
+	case *object.CompiledFunction:
+		return vm.callFunction(callee, numArgs)
+	case *object.LibFunc:
+		return vm.callBuiltin(callee, numArgs)
+	default:
+		return fmt.Errorf("calling non-function and non-built-in")
+	}
+}
+
+func (vm *VM) callFunction(fn *object.CompiledFunction, numArgs int) error {
+	if numArgs != fn.NumParameters {
+		return fmt.Errorf("wrong number of arguments: want=%d, got=%d", fn.NumParameters, numArgs)
+	}
+
+	frame := NewFrame(fn, vm.sp-numArgs)
+	vm.pushFrame(frame)
+
+	vm.sp = frame.bp + fn.NumLocals
+
+	return nil
+}
+
+func (vm *VM) callBuiltin(builtin *object.LibFunc, numArgs int) error {
+	args := vm.stack[vm.sp-numArgs : vm.sp]
+
+	result := builtin.Fn(args...)
+	if result != nil {
+		vm.push(result)
+	} else {
+		vm.push(Null)
+	}
+
+	return nil
 }

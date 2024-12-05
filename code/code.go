@@ -45,6 +45,8 @@ const (
 
 	OpGetLocal
 	OpSetLocal
+
+	OpGetLibFunc
 )
 
 func (ins Instructions) String() string {
@@ -122,6 +124,8 @@ var definitions = map[Opcode]*Definition{
 
 	OpGetLocal: {"OpGetLocal", []int{1}},
 	OpSetLocal: {"OpSetLocal", []int{1}},
+
+	OpGetLibFunc: {"OpGetBuiltin", []int{1}},
 }
 
 func Lookup(op byte) (*Definition, error) {

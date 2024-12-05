@@ -46,9 +46,15 @@ func New() *Compiler {
 		lastInstruction:     EmittedInstruction{},
 		previousInstruction: EmittedInstruction{},
 	}
+
+	symbolTable := NewSymbolTable()
+	for i, v := range object.LibFuncs {
+		symbolTable.DefineBuiltin(i, v.Name)
+	}
+
 	return &Compiler{
 		constants:   []object.Object{},
-		symbolTable: NewSymbolTable(),
+		symbolTable: symbolTable,
 
 		scopes:     []CompilationScope{mainScope},
 		scopeIndex: 0,
@@ -97,11 +103,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		if !ok {
 			return fmt.Errorf("undefined variable %s", node.Value)
 		}
-		if symbol.Scope == GlobalScope {
-			c.emit(code.OpGetGlobal, symbol.Index)
-		} else {
-			c.emit(code.OpGetLocal, symbol.Index)
-		}
+		c.loadSymbol(symbol)
 
 	case *ast.IfStatement:
 		if err := c.Compile(node.Condition); err != nil {
@@ -270,8 +272,9 @@ func (c *Compiler) Compile(node ast.Node) error {
 		ins := c.leaveScope()
 
 		compiledFn := &object.CompiledFunction{
-			Instructions: ins,
-			NumLocals:    numLocals,
+			Instructions:  ins,
+			NumLocals:     numLocals,
+			NumParameters: len(node.Parameters),
 		}
 
 		c.emit(code.OpConstant, c.addConstant(compiledFn))
@@ -387,6 +390,18 @@ func (c *Compiler) leaveScope() code.Instructions {
 	c.scopeIndex--
 
 	return instructions
+}
+
+func (c *Compiler) loadSymbol(s Symbol) error {
+	switch s.Scope {
+	case GlobalScope:
+		c.emit(code.OpGetGlobal, s.Index)
+	case LocalScope:
+		c.emit(code.OpGetLocal, s.Index)
+	case LibFuncScope:
+		c.emit(code.OpGetLibFunc, s.Index)
+	}
+	return nil
 }
 
 func (c *Compiler) emit(op code.Opcode, operands ...int) int {
