@@ -47,6 +47,10 @@ const (
 	OpSetLocal
 
 	OpGetLibFunc
+
+	OpClosure
+	OpGetFree
+	OpCurrentClosure
 )
 
 func (ins Instructions) String() string {
@@ -77,6 +81,8 @@ func (ins Instructions) fmtInstruction(def *Definition, operands []int) string {
 		return def.Name
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
+	case 2:
+		return fmt.Sprintf("%s %d %d", def.Name, operands[0], operands[1])
 	}
 
 	return fmt.Sprintf("ERROR: unhanded operandCount for %s\n", def.Name)
@@ -126,6 +132,10 @@ var definitions = map[Opcode]*Definition{
 	OpSetLocal: {"OpSetLocal", []int{1}},
 
 	OpGetLibFunc: {"OpGetBuiltin", []int{1}},
+
+	OpClosure:        {"OpClosure", []int{2, 1}},
+	OpGetFree:        {"OpGetFree", []int{1}},
+	OpCurrentClosure: {"OpCurrentClosure", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {
